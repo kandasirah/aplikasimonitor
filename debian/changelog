@@ -1,0 +1,7 @@
+aplikasimonitor (0.1.0) unstable; urgency=medium
+
+  * Rilis awal.
+  * Dasbor service systemd, proses, port, resource, sensor, dan log journald.
+  * Kontrol service lewat D-Bus + polkit (tanpa sudo).
+
+ -- pandito <pandito@example.com>  Fri, 16 Oct 2026 23:00:00 +0900

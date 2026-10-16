@@ -1,0 +1,33 @@
+Source: aplikasimonitor
+Section: admin
+Priority: optional
+Maintainer: pandito <pandito@example.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-setuptools,
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://example.com/aplikasimonitor
+
+Package: aplikasimonitor
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         python3-psutil,
+         python3-fastapi,
+         python3-uvicorn,
+         python3-dbus-next,
+         lm-sensors,
+         iproute2,
+Recommends: systemd
+Description: Dasbor monitoring untuk Linux
+ Aplikasi Monitor menampilkan service systemd, proses, port yang
+ mendengarkan, resource (CPU, memori, disk, jaringan), sensor
+ (suhu, kipas, baterai), serta log journald secara realtime, semuanya
+ dalam satu dasbor web.
+ .
+ Aplikasi berjalan tanpa hak istimewa. Aksi start/stop/restart service
+ diotorisasi melalui polkit (lewat API D-Bus systemd), sehingga tidak
+ diperlukan aturan sudoers.

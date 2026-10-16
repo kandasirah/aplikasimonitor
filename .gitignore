@@ -1,0 +1,33 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+
+# --- Virtualenv ---
+.venv/
+venv/
+env/
+
+# --- Hasil build setuptools/pip ---
+build/
+dist/
+*.egg
+
+# --- Artefak pengemasan Debian ---
+.pybuild/
+debian/.debhelper/
+debian/aplikasimonitor/
+debian/files
+debian/*.substvars
+debian/*.debhelper
+debian/*.debhelper.log
+debian/debhelper-build-stamp
+*.deb
+
+# --- Editor / sistem operasi ---
+*.swp
+*~
+.DS_Store
+.idea/
+.vscode/

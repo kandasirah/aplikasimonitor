@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aplikasimonitor"
+version = "0.1.0"
+description = "Dasbor monitoring Linux: service systemd, proses, port, sensor, dan log journald."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "pandito" }]
+keywords = ["monitoring", "dashboard", "systemd", "psutil", "fastapi", "linux"]
+classifiers = [
+    "Environment :: Web Environment",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "fastapi>=0.100",
+    "uvicorn[standard]>=0.23",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+# Jalur kontrol service lewat D-Bus + polkit (tanpa sudo).
+dbus = ["dbus-next>=0.2.3"]
+dev = ["ruff", "build", "pytest"]
+
+[project.scripts]
+aplikasimonitor = "aplikasimonitor.cli:main"
+
+[project.urls]
+Homepage = "https://example.com/aplikasimonitor"
+
+[tool.setuptools]
+packages = ["aplikasimonitor", "aplikasimonitor.collectors"]
+
+[tool.setuptools.package-data]
+aplikasimonitor = ["static/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

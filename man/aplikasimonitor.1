@@ -1,0 +1,56 @@
+.TH APLIKASIMONITOR 1 "Oktober 2026" "aplikasimonitor 0.1.0" "Perintah Pengguna"
+.SH NAMA
+aplikasimonitor \- dasbor monitoring sistem untuk Linux
+.SH SINOPSIS
+.B aplikasimonitor
+.RI [ pilihan ]
+.SH DESKRIPSI
+.B aplikasimonitor
+menjalankan server web lokal yang menampilkan keadaan sistem: service systemd,
+proses yang berjalan, port yang mendengarkan, penggunaan CPU/memori/disk/jaringan,
+pembacaan sensor (suhu, kipas, baterai), dan aliran log journald secara langsung.
+.PP
+Data dibaca dari sistem dan disajikan pada sebuah halaman web. Secara bawaan
+server hanya mendengarkan di
+.IR 127.0.0.1 .
+.SH PILIHAN
+.TP
+.BR \-\-host " " \fIALAMAT\fR
+Alamat untuk mengikat server (bawaan: 127.0.0.1). Gunakan 0.0.0.0 untuk
+mengakses dari jaringan.
+.TP
+.BR \-\-port " " \fIPORT\fR
+Nomor port (bawaan: 8787).
+.TP
+.BR \-\-interval " " \fIDETIK\fR
+Selang pengiriman snapshot resource ke peramban (bawaan: 2).
+.TP
+.B \-\-no\-service\-control
+Menonaktifkan tombol start/stop/restart service.
+.TP
+.B \-\-reload
+Mode pengembangan: memuat ulang otomatis saat berkas berubah.
+.TP
+.B \-\-version
+Menampilkan versi lalu keluar.
+.SH BERKAS
+.TP
+.I /usr/share/aplikasimonitor/static/
+Berkas antarmuka web.
+.SH LINGKUNGAN
+.TP
+.B MONITOR_HOST
+Setara dengan \fB\-\-host\fR.
+.TP
+.B MONITOR_STREAM_INTERVAL
+Setara dengan \fB\-\-interval\fR.
+.TP
+.B MONITOR_SERVICE_BACKEND
+Jalur kontrol service: \fIauto\fR, \fIdbus\fR, atau \fIsystemctl\fR.
+.SH LIHAT JUGA
+.BR systemctl (1),
+.BR journalctl (1),
+.BR ps (1),
+.BR ss (8)
+.SH PENULIS
+Ditulis oleh pandito.

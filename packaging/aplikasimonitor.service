@@ -1,0 +1,13 @@
+[Unit]
+Description=Aplikasi Monitor — dasbor monitoring sistem
+Documentation=https://example.com/aplikasimonitor
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/aplikasimonitor --host 127.0.0.1 --port 8787
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

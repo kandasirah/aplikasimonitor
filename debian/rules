@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+# Belum ada test suite otomatis; lewati langkah ini agar build tidak gagal.
+override_dh_auto_test:
+
+# Pasang unit systemd --user, tapi JANGAN aktifkan otomatis saat pemasangan:
+# memasang dasbor tidak seharusnya langsung menyalakan server web di sesi pengguna.
+# Ini juga menghindari sisa symlink di ~/.config/systemd/user/ saat paket dihapus.
+override_dh_installsystemduser:
+	dh_installsystemduser --no-enable

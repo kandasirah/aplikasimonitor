@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aplikasi Monitor</title>
+<link rel="stylesheet" href="/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◧</span>
+    <div>
+      <h1>Aplikasi Monitor</h1>
+      <p class="muted" id="host-line">memuat…</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="uptime">
+      <span class="muted">Uptime</span>
+      <strong id="uptime">—</strong>
+    </div>
+    <div class="conn">
+      <span class="dot" id="conn-dot"></span>
+      <span id="conn-text">menyambung…</span>
+    </div>
+    <div class="clock" id="clock">—</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Ringkasan resource -->
+  <section class="stats" id="stats">
+    <article class="card stat" data-key="cpu">
+      <span class="stat-label">CPU</span>
+      <span class="stat-value" id="cpu-value">—</span>
+      <span class="stat-sub" id="cpu-sub">—</span>
+      <div class="bar"><i id="cpu-bar" style="width:0"></i></div>
+    </article>
+    <article class="card stat" data-key="mem">
+      <span class="stat-label">Memori</span>
+      <span class="stat-value" id="mem-value">—</span>
+      <span class="stat-sub" id="mem-sub">—</span>
+      <div class="bar"><i id="mem-bar" style="width:0"></i></div>
+    </article>
+    <article class="card stat" data-key="swap">
+      <span class="stat-label">Swap</span>
+      <span class="stat-value" id="swap-value">—</span>
+      <span class="stat-sub" id="swap-sub">—</span>
+      <div class="bar"><i id="swap-bar" style="width:0"></i></div>
+    </article>
+    <article class="card stat" data-key="disk">
+      <span class="stat-label">Disk /</span>
+      <span class="stat-value" id="disk-value">—</span>
+      <span class="stat-sub" id="disk-sub">—</span>
+      <div class="bar"><i id="disk-bar" style="width:0"></i></div>
+    </article>
+    <article class="card stat" data-key="temp">
+      <span class="stat-label">Suhu CPU</span>
+      <span class="stat-value" id="temp-value">—</span>
+      <span class="stat-sub" id="temp-sub">—</span>
+    </article>
+    <article class="card stat" data-key="fan">
+      <span class="stat-label">Kipas</span>
+      <span class="stat-value" id="fan-value">—</span>
+      <span class="stat-sub" id="fan-sub">—</span>
+    </article>
+    <article class="card stat" data-key="battery">
+      <span class="stat-label">Baterai</span>
+      <span class="stat-value" id="bat-value">—</span>
+      <span class="stat-sub" id="bat-sub">—</span>
+      <div class="bar"><i id="bat-bar" style="width:0"></i></div>
+    </article>
+    <article class="card stat" data-key="net">
+      <span class="stat-label">Jaringan</span>
+      <span class="stat-value net" id="net-down">—</span>
+      <span class="stat-sub" id="net-sub">—</span>
+    </article>
+  </section>
+
+  <!-- Grafik riwayat -->
+  <section class="card chart-card">
+    <div class="card-head">
+      <h2>Riwayat CPU &amp; Memori</h2>
+      <span class="muted" id="chart-hint">60 sampel terakhir</span>
+    </div>
+    <div class="chart-wrap"><canvas id="history-chart"></canvas></div>
+  </section>
+
+  <!-- Service & Port -->
+  <section class="grid-2">
+    <article class="card">
+      <div class="card-head">
+        <h2>Service systemd</h2>
+        <div class="head-tools">
+          <input type="search" id="service-search" placeholder="cari service…">
+          <span class="pill" id="service-count">—</span>
+        </div>
+      </div>
+      <div class="table-scroll" id="services-body">
+        <div class="empty">memuat…</div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h2>Port mendengarkan</h2>
+        <span class="pill" id="ports-count">—</span>
+      </div>
+      <div class="table-scroll" id="ports-body">
+        <div class="empty">memuat…</div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Proses & Sensor -->
+  <section class="grid-2">
+    <article class="card">
+      <div class="card-head">
+        <h2>Proses teratas</h2>
+        <div class="head-tools">
+          <button class="chip" data-sort="cpu" aria-pressed="true">CPU</button>
+          <button class="chip" data-sort="mem" aria-pressed="false">RAM</button>
+          <span class="pill" id="proc-count">—</span>
+        </div>
+      </div>
+      <div class="table-scroll tall" id="processes-body">
+        <div class="empty">memuat…</div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h2>Sensor (lm-sensors)</h2>
+        <span class="pill" id="sensor-count">—</span>
+      </div>
+      <div class="table-scroll tall" id="sensors-body">
+        <div class="empty">memuat…</div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Log -->
+  <section class="card">
+    <div class="card-head">
+      <h2>Log journald <span class="live-badge">LIVE</span></h2>
+      <div class="head-tools">
+        <select id="log-unit"><option value="">semua unit</option></select>
+        <select id="log-level">
+          <option value="">semua level</option>
+          <option value="3">err+</option>
+          <option value="4">warning+</option>
+          <option value="6">info+</option>
+          <option value="7">debug+</option>
+        </select>
+        <input type="search" id="log-search" placeholder="filter teks…">
+        <label class="switch"><input type="checkbox" id="log-autoscroll" checked> auto-scroll</label>
+        <button class="chip" id="log-clear">bersihkan</button>
+      </div>
+    </div>
+    <div class="logs" id="log-body"><div class="empty">menunggu log…</div></div>
+  </section>
+
+</main>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
