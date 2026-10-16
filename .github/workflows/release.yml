@@ -1,0 +1,46 @@
+name: Build & Release .deb
+
+# Berjalan saat push tag versi, mis. `git tag v0.1.0 && git push origin v0.1.0`.
+# Bisa juga dijalankan manual dari tab Actions (workflow_dispatch).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # diperlukan untuk membuat Release
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pasang perkakas build
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential debhelper dh-python \
+            pybuild-plugin-pyproject python3-all python3-setuptools lintian
+
+      - name: Bangun paket .deb
+        run: |
+          dpkg-buildpackage -us -uc -b
+          # dpkg-buildpackage menaruh hasilnya di direktori induk; pindahkan ke sini
+          mv ../aplikasimonitor_*.deb ./
+          ls -l aplikasimonitor_*.deb
+
+      - name: Periksa mutu paket (tidak menggagalkan build)
+        run: lintian aplikasimonitor_*.deb || true
+
+      - name: Lampirkan .deb ke GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Aplikasi Monitor ${{ github.ref_name }}
+          files: aplikasimonitor_*.deb
+          body: |
+            Paket Debian untuk Aplikasi Monitor.
+
+            **Pemasangan:**
+            ```bash
+            sudo apt install ./aplikasimonitor_*_all.deb
+            ```
