@@ -139,6 +139,32 @@ alih-alih mem-bundle pip — ini syarat agar sebuah paket layak masuk repositori
 > Debian/Ubuntu, ganti `debian/source/format` menjadi `3.0 (quilt)` dan sediakan
 > `orig.tar.gz`.
 
+### Rilis otomatis lewat GitHub Actions
+
+`.github/workflows/release.yml` membangun `.deb` lalu menerbitkannya sebagai
+GitHub Release dan artifact:
+
+| Pemicu | Nomor versi | Hasil |
+|---|---|---|
+| push ke `master` | patch naik otomatis dari tag terakhir (`v0.1.0` → `v0.1.1` → …) | tag baru + Release baru |
+| push tag `v*` | diambil dari tag tersebut | Release untuk tag itu — untuk rilis minor/mayor |
+| **Run workflow** di tab Actions | boleh diisi manual, mis. `0.2.0` | tag + Release |
+
+Nomor versi ditulis ke `pyproject.toml` dan disisipkan sebagai entri baru di
+`debian/changelog` sebelum build, jadi `.deb` selalu bernama sesuai versinya.
+Workflow ini idempoten: menjalankannya ulang pada commit yang sama tidak membuat
+tag atau entri changelog kembar.
+
+Untuk rilis minor/mayor, cukup buat tag sendiri:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+> Karena `debian/source/format` = `3.0 (native)`, nomor versi tidak boleh
+> mengandung tanda hubung. Tag seperti `v1.0.0-rc1` akan ditolak dengan pesan
+> jelas — pakai `1.0.0`.
+
 ### Jalur ke repositori resmi Debian/Ubuntu
 
 1. Ajukan bug **ITP** di `bugs.debian.org`.

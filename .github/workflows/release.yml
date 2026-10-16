@@ -1,20 +1,97 @@
 name: Build & Release .deb
 
-# Berjalan saat push tag versi, mis. `git tag v0.1.0 && git push origin v0.1.0`.
-# Bisa juga dijalankan manual dari tab Actions (workflow_dispatch).
+# Tiga cara memicu:
+#   1. push ke `master`  -> versi patch naik otomatis (v0.1.0 -> v0.1.1 -> ...),
+#                           lalu tag + Release dibuat otomatis.
+#   2. push tag `v*`     -> versi diambil dari tag (untuk rilis minor/mayor manual).
+#   3. workflow_dispatch -> jalankan manual; versi boleh diisi sendiri.
 on:
   push:
+    branches: ["master"]
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Versi rilis (mis. 0.2.0). Kosongkan untuk naik patch otomatis."
+        required: false
+        default: ""
 
 permissions:
-  contents: write   # diperlukan untuk membuat Release
+  contents: write   # diperlukan untuk membuat tag + Release
+
+# Jangan biarkan dua build berjalan bersamaan dan berebut nomor versi.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-deb:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # perlu seluruh riwayat tag untuk menghitung versi berikutnya
+
+      - name: Tentukan nomor versi
+        id: ver
+        env:
+          MANUAL_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # Dipicu oleh `git push origin v1.2.3`.
+            tag="${GITHUB_REF_NAME}"
+            version="${tag#v}"
+
+          elif [ -n "${MANUAL_VERSION}" ]; then
+            # Dijalankan manual dari tab Actions dengan versi yang ditentukan.
+            version="${MANUAL_VERSION#v}"
+            tag="v${version}"
+
+          elif existing="$(git tag --points-at HEAD -l 'v[0-9]*' --sort=-v:refname | head -n1)" \
+               && [ -n "${existing}" ]; then
+            # Commit ini sudah pernah dirilis (mis. workflow dijalankan ulang).
+            # Pakai tag yang sama supaya tidak menumpuk tag kembar di satu commit.
+            tag="${existing}"
+            version="${tag#v}"
+
+          else
+            # Push ke master: naikkan nomor patch dari tag terbaru.
+            latest="$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)"
+            if [ -z "${latest}" ]; then
+              version="0.1.0"
+            else
+              base="${latest#v}"          # 0.1.4
+              major="${base%%.*}"         # 0
+              rest="${base#*.}"           # 1.4
+              minor="${rest%%.*}"         # 1
+              patch="${rest#*.}"          # 4
+              patch="${patch%%[!0-9]*}"   # buang sufiks seperti -rc1
+              version="${major}.${minor}.$((patch + 1))"
+            fi
+            tag="v${version}"
+          fi
+
+          # debian/source/format = "3.0 (native)", jadi versi tidak boleh
+          # mengandung tanda hubung (itu akan dianggap sebagai revisi Debian).
+          case "${version}" in
+            *-*)
+              echo "::error::Versi '${version}' mengandung '-' yang tidak sah untuk format sumber native 3.0. Pakai versi seperti 1.2.0."
+              exit 1
+              ;;
+          esac
+          case "${version}" in
+            [0-9]*.[0-9]*) ;;
+            *)
+              echo "::error::Versi '${version}' tidak berbentuk angka bertitik (mis. 1.2.0)."
+              exit 1
+              ;;
+          esac
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "Versi: ${version} (tag ${tag})"
 
       - name: Pasang perkakas build
         run: |
@@ -22,8 +99,37 @@ jobs:
           sudo apt-get install -y build-essential debhelper dh-python \
             pybuild-plugin-pyproject python3-all python3-setuptools lintian
 
+      - name: Tulis versi ke metadata (${{ steps.ver.outputs.version }})
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # 1. pyproject.toml -> metadata distribusi Python
+          sed -i -E "s/^version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
+          grep -n '^version' pyproject.toml
+
+          # 2. debian/changelog -> sumber nomor versi paket .deb
+          #    (pakai `case`, bukan `[ ... != pola ]`: di bash `[` tidak
+          #     mencocokkan pola, sehingga pengecekan akan selalu gagal)
+          case "$(head -n1 debian/changelog)" in
+            *"(${VERSION})"*) ;;   # entri versi ini sudah ada, jangan dobel
+            *)
+              tmp="$(mktemp)"
+              {
+                printf 'aplikasimonitor (%s) unstable; urgency=medium\n\n' "${VERSION}"
+                printf '  * Rilis otomatis dari commit %s.\n\n' "${GITHUB_SHA:0:7}"
+                printf ' -- pandito <pandito@example.com>  %s\n\n' "$(date -R)"
+                cat debian/changelog
+              } > "${tmp}"
+              mv "${tmp}" debian/changelog
+              ;;
+          esac
+          head -n 8 debian/changelog
+
       - name: Bangun paket .deb
         run: |
+          set -euo pipefail
           dpkg-buildpackage -us -uc -b
           # dpkg-buildpackage menaruh hasilnya di direktori induk; pindahkan ke sini
           mv ../aplikasimonitor_*.deb ./
@@ -32,15 +138,38 @@ jobs:
       - name: Periksa mutu paket (tidak menggagalkan build)
         run: lintian aplikasimonitor_*.deb || true
 
+      - name: Simpan .deb sebagai artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ steps.ver.outputs.tag }}
+          path: aplikasimonitor_*.deb
+          if-no-files-found: error
+
+      - name: Buat & push tag ${{ steps.ver.outputs.tag }}
+        if: github.ref_type != 'tag'
+        run: |
+          set -euo pipefail
+          tag="${{ steps.ver.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} sudah ada — tidak dibuat ulang (re-run dari commit yang sama)."
+          else
+            git tag "${tag}"
+            git push origin "refs/tags/${tag}"
+          fi
+
       - name: Lampirkan .deb ke GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Aplikasi Monitor ${{ github.ref_name }}
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Aplikasi Monitor ${{ steps.ver.outputs.version }}
           files: aplikasimonitor_*.deb
           body: |
-            Paket Debian untuk Aplikasi Monitor.
+            **Aplikasi Monitor ${{ steps.ver.outputs.version }}**
+            Dibangun otomatis dari commit `${{ github.sha }}`.
+
+            **Perubahan:** ${{ github.event.compare }}
 
             **Pemasangan:**
             ```bash
-            sudo apt install ./aplikasimonitor_*_all.deb
+            sudo apt install ./aplikasimonitor_${{ steps.ver.outputs.version }}_all.deb
             ```
