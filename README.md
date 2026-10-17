@@ -8,6 +8,7 @@ Stack: **FastAPI + psutil** di backend, frontend HTML/CSS/JS ringan dengan Chart
 Tanpa database; semua data dibaca langsung dari sistem.
 
 ![Dasbor Aplikasi Monitor](gambar/dasborbaru.png)
+![Dasbor Aplikasi Monitor](gambar/storage.png)
 
 ## Fitur
 
