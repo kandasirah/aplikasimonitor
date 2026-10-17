@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config, service_control
-from .collectors import logs, ports, processes, resources, sensors, services, system
+from .collectors import logs, ports, processes, resources, sensors, services, storage, system
 
 app = FastAPI(title="Aplikasi Monitor", version="1.0.0")
 
@@ -36,6 +36,11 @@ def api_resources():
 @app.get("/api/sensors")
 def api_sensors():
     return sensors.read_sensors()
+
+
+@app.get("/api/storage")
+def api_storage():
+    return storage.read_storage()
 
 
 @app.get("/api/ports")

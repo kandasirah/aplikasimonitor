@@ -403,6 +403,70 @@ async function loadSensors() {
 }
 
 // ---------------------------------------------------------------------------
+// Penyimpanan
+// ---------------------------------------------------------------------------
+async function loadStorage() {
+  const partsBody = $("storage-partitions");
+  const ioBody = $("storage-io");
+  try {
+    const data = await getJSON("/api/storage");
+
+    // Partisi
+    const parts = data.partitions || [];
+    $("storage-count").textContent = `${parts.length} partisi`;
+    if (!parts.length) {
+      partsBody.innerHTML = `<div class="empty">tidak ada partisi terbaca</div>`;
+    } else {
+      partsBody.innerHTML = `<table class="tbl tbl-storage"><thead><tr>
+          <th>Perangkat</th><th>Mount</th><th>Tipe</th>
+          <th class="num">Pemakaian</th><th class="num">Terpakai / Total</th><th class="num">Inode</th>
+        </tr></thead><tbody>` +
+        parts.map((p) => {
+          const cls = p.percent >= 90 ? "crit" : p.percent >= 70 ? "warn" : "";
+          const pct = Math.min(100, Math.max(0, p.percent));
+          const inode = p.inodes ? `${p.inodes.percent.toFixed(0)}%` : "—";
+          return `<tr>
+            <td class="mono truncate" title="${esc(p.device)}">${esc(p.device)}</td>
+            <td class="mono truncate" title="${esc(p.mount)}">${esc(p.mount)}</td>
+            <td>${esc(p.fstype)}</td>
+            <td class="num"><div class="cell-bar">
+              <div class="bar ${cls}"><i style="width:${pct}%"></i></div>
+              <span>${p.percent.toFixed(0)}%</span>
+            </div></td>
+            <td class="num mono">${fmtBytes(p.used)} / ${fmtBytes(p.total)}</td>
+            <td class="num muted">${inode}</td>
+          </tr>`;
+        }).join("") + `</tbody></table>`;
+    }
+
+    // Aktivitas I/O per disk
+    const disks = data.disks || [];
+    $("storage-io-total").textContent =
+      `· baca ${fmtRate(data.total_read_bps)} · tulis ${fmtRate(data.total_write_bps)}`;
+    if (!disks.length) {
+      ioBody.innerHTML = `<div class="empty">tidak ada aktivitas disk terdeteksi</div>`;
+    } else {
+      ioBody.innerHTML = `<table class="tbl tbl-io"><thead><tr>
+          <th>Disk</th>
+          <th class="num">Baca</th><th class="num">Tulis</th>
+          <th class="num">IOPS baca</th><th class="num">IOPS tulis</th><th class="num">Sibuk</th>
+        </tr></thead><tbody>` +
+        disks.map((d) => `<tr>
+          <td class="mono">${esc(d.name)}</td>
+          <td class="num">${fmtRate(d.read_bps)}</td>
+          <td class="num">${fmtRate(d.write_bps)}</td>
+          <td class="num muted">${d.read_iops.toFixed(1)}</td>
+          <td class="num muted">${d.write_iops.toFixed(1)}</td>
+          <td class="num muted">${d.busy_percent != null ? d.busy_percent.toFixed(0) + "%" : "—"}</td>
+        </tr>`).join("") + `</tbody></table>`;
+    }
+  } catch (err) {
+    partsBody.innerHTML = `<div class="empty">gagal memuat penyimpanan: ${esc(err.message)}</div>`;
+    ioBody.innerHTML = "";
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Log
 // ---------------------------------------------------------------------------
 function logLineClass(level) {
@@ -455,7 +519,7 @@ function startLogs() {
 // ---------------------------------------------------------------------------
 // Tab panel
 // ---------------------------------------------------------------------------
-const TAB_NAMES = ["services", "ports", "processes", "sensors", "logs"];
+const TAB_NAMES = ["services", "ports", "processes", "sensors", "storage", "logs"];
 
 function activeTabName() {
   const sel = document.querySelector('.tab[aria-selected="true"]');
@@ -548,6 +612,7 @@ function init() {
   loadPorts();
   loadProcesses();
   loadSensors();
+  loadStorage();
   startStream();
   startLogs();
 
@@ -556,6 +621,7 @@ function init() {
   setInterval(loadPorts, 8000);
   setInterval(loadProcesses, 5000);
   setInterval(loadSensors, 5000);
+  setInterval(loadStorage, 5000);
   setInterval(tickClock, 1000);
   tickClock();
 }

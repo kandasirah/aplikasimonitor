@@ -151,6 +151,12 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; font-size: .76rem; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .empty { padding: 22px; text-align: center; color: var(--muted); font-size: .85rem; }
+.sub-head { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 0 0 10px; }
+.sub-head:not(:first-child) { margin-top: 22px; }
+.sub-head .muted { text-transform: none; letter-spacing: 0; }
+.cell-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.cell-bar .bar { width: 84px; height: 6px; margin: 0; }
+.cell-bar > span { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Lebar kolom tetap (fixed) supaya tabel tidak bergeser saat data refresh.
    Kolom tanpa lebar eksplisit mengisi sisa ruang secara merata. */
@@ -180,6 +186,22 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .tbl-sensors th:nth-child(3), .tbl-sensors td:nth-child(3) { width: 90px; }
 .tbl-sensors th:nth-child(4), .tbl-sensors td:nth-child(4) { width: 80px; }
 .tbl-sensors th:nth-child(5), .tbl-sensors td:nth-child(5) { width: 80px; }
+
+/* Penyimpanan - Partisi: Perangkat | Mount | Tipe | Pemakaian | Terpakai/Total | Inode */
+.tbl-storage { min-width: 720px; }
+.tbl-storage th:nth-child(1), .tbl-storage td:nth-child(1) { width: 18%; }
+.tbl-storage th:nth-child(3), .tbl-storage td:nth-child(3) { width: 88px; }
+.tbl-storage th:nth-child(4), .tbl-storage td:nth-child(4) { width: 150px; }
+.tbl-storage th:nth-child(5), .tbl-storage td:nth-child(5) { width: 200px; }
+.tbl-storage th:nth-child(6), .tbl-storage td:nth-child(6) { width: 80px; }
+
+/* Penyimpanan - I/O: Disk | Baca | Tulis | IOPS baca | IOPS tulis | Sibuk */
+.tbl-io { min-width: 640px; }
+.tbl-io th:nth-child(2), .tbl-io td:nth-child(2),
+.tbl-io th:nth-child(3), .tbl-io td:nth-child(3) { width: 120px; }
+.tbl-io th:nth-child(4), .tbl-io td:nth-child(4),
+.tbl-io th:nth-child(5), .tbl-io td:nth-child(5) { width: 100px; }
+.tbl-io th:nth-child(6), .tbl-io td:nth-child(6) { width: 90px; }
 
 /* ---------- Badges & chip ---------- */
 .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .68rem; font-weight: 600; letter-spacing: .02em; }

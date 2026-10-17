@@ -19,6 +19,8 @@ Tanpa database; semua data dibaca langsung dari sistem.
 - **Port mendengarkan** — dari `ss`, ditandai mana yang terekspos ke jaringan.
 - **Proses teratas** — dapat diurut CPU/RAM, lengkap dengan user dan RSS.
 - **Sensor lm-sensors** — suhu/kipas/tegangan lengkap dengan nilai maks & kritis.
+- **Penyimpanan** — pemakaian tiap partisi (bar + inode) serta laju baca/tulis,
+  IOPS, dan waktu sibuk tiap disk.
 - **Log journald LIVE** — stream `journalctl -f`, filter per unit dan level.
 
 ## Menjalankan
@@ -52,6 +54,7 @@ aplikasimonitor/            # paket Python
     processes.py            # daftar proses (psutil)
     ports.py                # parsing `ss -tulpnH`
     sensors.py              # parsing `sensors -j` (lm-sensors)
+    storage.py              # partisi + inode, laju I/O per disk (psutil)
     logs.py                 # stream `journalctl -f -o json` (async)
   static/                   # berkas antarmuka (package data)
 pyproject.toml              # metadata + dependensi + entry point
