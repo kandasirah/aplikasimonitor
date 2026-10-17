@@ -7,7 +7,7 @@ kipas, baterai), dan **log journald realtime** — semuanya di satu halaman web.
 Stack: **FastAPI + psutil** di backend, frontend HTML/CSS/JS ringan dengan Chart.js.
 Tanpa database; semua data dibaca langsung dari sistem.
 
-![Dasbor Aplikasi Monitor](gambar/dasbor.png)
+![Dasbor Aplikasi Monitor](gambar/dasborbaru.png)
 
 ## Fitur
 
