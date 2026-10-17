@@ -145,6 +145,38 @@ jobs:
           path: aplikasimonitor_*.deb
           if-no-files-found: error
 
+      - name: Susun catatan rilis
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # 1) Ringkasan diambil dari entri debian/changelog untuk versi ini.
+          awk -v ver="${VERSION}" '
+            index($0, "aplikasimonitor (" ver ")") == 1 { cap=1; next }
+            cap && /^ -- / { exit }
+            cap { sub(/^[[:space:]]+/, ""); print }
+          ' debian/changelog > RELEASE_NOTES.md
+
+          # 2) Daftar commit sejak tag rilis sebelumnya (kecuali tag versi ini).
+          prev="$(git tag -l 'v[0-9]*' --sort=-v:refname | grep -vx "v${VERSION}" | head -n1 || true)"
+
+          {
+            printf '\n### Daftar commit\n\n'
+            if [ -n "${prev}" ]; then
+              printf 'Sejak `%s`:\n\n' "${prev}"
+              git log --pretty='- `%h` %s' "${prev}..HEAD"
+            else
+              git log --pretty='- `%h` %s' -n 30
+            fi
+            printf '\n### Pemasangan\n\n```bash\n'
+            printf 'sudo apt install ./aplikasimonitor_%s_all.deb\n' "${VERSION}"
+            printf '```\n'
+          } >> RELEASE_NOTES.md
+
+          echo "----- catatan rilis -----"
+          cat RELEASE_NOTES.md
+
       - name: Buat & push tag ${{ steps.ver.outputs.tag }}
         if: github.ref_type != 'tag'
         run: |
@@ -162,14 +194,5 @@ jobs:
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: Aplikasi Monitor ${{ steps.ver.outputs.version }}
+          body_path: RELEASE_NOTES.md
           files: aplikasimonitor_*.deb
-          body: |
-            **Aplikasi Monitor ${{ steps.ver.outputs.version }}**
-            Dibangun otomatis dari commit `${{ github.sha }}`.
-
-            **Perubahan:** ${{ github.event.compare }}
-
-            **Pemasangan:**
-            ```bash
-            sudo apt install ./aplikasimonitor_${{ steps.ver.outputs.version }}_all.deb
-            ```

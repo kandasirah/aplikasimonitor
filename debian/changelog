@@ -1,3 +1,18 @@
+aplikasimonitor (0.2.0) unstable; urgency=medium
+
+  * UI: panel data bertab (Service, Port, Proses, Sensor, Log) dengan
+    kartu statistik dan grafik riwayat tetap di atas.
+  * UI: layout tabel dibuat konsisten - lebar kolom tetap (table-layout
+    fixed) sehingga tidak bergeser atau melebar saat data di-refresh.
+  * UI: tab bergaya pil dengan ikon, navigasi keyboard, dan deep-link
+    lewat hash URL.
+  * UI: pill jumlah service diringkas menjadi running/total, dengan
+    tooltip berisi rincian dan warna merah bila ada service gagal.
+  * Rilis: catatan rilis kini disusun dari debian/changelog + daftar
+    commit.
+
+ -- pandito <pandito@example.com>  Sat, 17 Oct 2026 15:25:06 +0900
+
 aplikasimonitor (0.1.0) unstable; urgency=medium
 
   * Rilis awal.
