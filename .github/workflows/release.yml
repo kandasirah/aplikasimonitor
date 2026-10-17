@@ -1,13 +1,11 @@
 name: Build & Release .deb
 
-# Tiga cara memicu:
-#   1. push ke `master`  -> versi patch naik otomatis (v0.1.0 -> v0.1.1 -> ...),
-#                           lalu tag + Release dibuat otomatis.
-#   2. push tag `v*`     -> versi diambil dari tag (untuk rilis minor/mayor manual).
-#   3. workflow_dispatch -> jalankan manual; versi boleh diisi sendiri.
+# Dua cara memicu (push ke `master` TIDAK lagi memicu rilis):
+#   1. push tag `v*`     -> versi diambil dari tag (jalur rilis resmi).
+#   2. workflow_dispatch -> jalankan manual; isi `version` untuk versi tertentu,
+#                           atau kosongkan untuk naik patch otomatis dari tag terakhir.
 on:
   push:
-    branches: ["master"]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
@@ -57,7 +55,8 @@ jobs:
             version="${tag#v}"
 
           else
-            # Push ke master: naikkan nomor patch dari tag terbaru.
+            # Bukan dari tag dan tanpa versi manual (mis. workflow_dispatch
+            # dengan input kosong): naikkan nomor patch dari tag terbaru.
             latest="$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)"
             if [ -z "${latest}" ]; then
               version="0.1.0"
