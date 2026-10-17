@@ -253,8 +253,11 @@ function serviceBadge(svc) {
 
 function renderServices(data) {
   state.services = data.services || [];
-  $("service-count").textContent = `${data.running} jalan / ${data.total}`;
-  if (data.failed) $("service-count").textContent += ` · ${data.failed} gagal`;
+  const pill = $("service-count");
+  pill.textContent = `${data.running}/${data.total}`;
+  pill.title = `${data.running} jalan, ${data.total} total` +
+    (data.failed ? `, ${data.failed} gagal` : "");
+  pill.classList.toggle("bad", Boolean(data.failed));
   filterServices();
   populateLogUnits();
 }
@@ -268,7 +271,7 @@ function filterServices() {
   const body = $("services-body");
   if (!rows.length) { body.innerHTML = `<div class="empty">tidak ada service cocok</div>`; return; }
 
-  body.innerHTML = `<table><thead><tr><th>Status</th><th>Unit</th><th>Deskripsi</th><th class="num">Aksi</th></tr></thead><tbody>` +
+  body.innerHTML = `<table class="tbl tbl-services"><thead><tr><th>Status</th><th>Unit</th><th>Deskripsi</th><th class="num">Aksi</th></tr></thead><tbody>` +
     rows.map((s) => {
       const isActive = s.active === "active";
       const toggle = isActive
@@ -330,7 +333,7 @@ async function loadPorts() {
     const ports = data.ports || [];
     $("ports-count").textContent = `${ports.length} port`;
     if (!ports.length) { body.innerHTML = `<div class="empty">tidak ada port mendengarkan</div>`; return; }
-    body.innerHTML = `<table><thead><tr><th>Port</th><th>Proto</th><th>Alamat</th><th>Proses</th></tr></thead><tbody>` +
+    body.innerHTML = `<table class="tbl tbl-ports"><thead><tr><th>Port</th><th>Proto</th><th>Alamat</th><th>Proses</th></tr></thead><tbody>` +
       ports.map((p) => {
         const procs = (p.processes || []).map((x) => `${esc(x.name)} <span class="muted">(${x.pid})</span>`).join(", ") || "—";
         const exposed = p.exposed ? ` <span class="badge exposed">terbuka</span>` : "";
@@ -354,7 +357,7 @@ async function loadProcesses() {
   try {
     const data = await getJSON(`/api/processes?sort=${state.processSort}&limit=60`);
     $("proc-count").textContent = `${data.total} proses`;
-    body.innerHTML = `<table><thead><tr>
+    body.innerHTML = `<table class="tbl tbl-processes"><thead><tr>
         <th class="num">PID</th><th>Nama</th><th>User</th>
         <th class="num">CPU%</th><th class="num">RAM%</th><th class="num">RSS</th><th>Perintah</th>
       </tr></thead><tbody>` +
@@ -382,7 +385,7 @@ async function loadSensors() {
     if (!data.available) { body.innerHTML = `<div class="empty">${esc(data.error || "sensor tidak tersedia")}</div>`; return; }
     const readings = data.readings || [];
     $("sensor-count").textContent = `${readings.length} pembacaan`;
-    body.innerHTML = `<table><thead><tr><th>Sensor</th><th>Label</th><th class="num">Nilai</th><th class="num">Maks</th><th class="num">Kritis</th></tr></thead><tbody>` +
+    body.innerHTML = `<table class="tbl tbl-sensors"><thead><tr><th>Sensor</th><th>Label</th><th class="num">Nilai</th><th class="num">Maks</th><th class="num">Kritis</th></tr></thead><tbody>` +
       readings.map((s) => {
         const hot = s.kind === "temp" && s.crit && s.value >= s.crit * 0.9;
         const value = `${s.value.toFixed(1)}${s.unit ? " " + s.unit : ""}`;
@@ -450,6 +453,55 @@ function startLogs() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab panel
+// ---------------------------------------------------------------------------
+const TAB_NAMES = ["services", "ports", "processes", "sensors", "logs"];
+
+function activeTabName() {
+  const sel = document.querySelector('.tab[aria-selected="true"]');
+  return sel ? sel.dataset.tab : "services";
+}
+
+function activateTab(name) {
+  if (!TAB_NAMES.includes(name)) name = "services";
+  for (const t of TAB_NAMES) {
+    const on = t === name;
+    const tab = $("tab-" + t);
+    const panel = $("panel-" + t);
+    tab.setAttribute("aria-selected", String(on));
+    tab.tabIndex = on ? 0 : -1;
+    panel.hidden = !on;
+  }
+  // Log yang tersembunyi tidak bisa auto-scroll; rapikan saat tab dibuka.
+  if (name === "logs" && $("log-autoscroll").checked) {
+    const body = $("log-body");
+    body.scrollTop = body.scrollHeight;
+  }
+  if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+}
+
+function bindTabs() {
+  const bar = document.querySelector(".tabbar");
+  bar.addEventListener("click", (e) => {
+    const tab = e.target.closest(".tab");
+    if (tab) activateTab(tab.dataset.tab);
+  });
+  bar.addEventListener("keydown", (e) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    const cur = TAB_NAMES.indexOf(activeTabName());
+    let next = cur;
+    if (e.key === "ArrowLeft") next = (cur - 1 + TAB_NAMES.length) % TAB_NAMES.length;
+    else if (e.key === "ArrowRight") next = (cur + 1) % TAB_NAMES.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = TAB_NAMES.length - 1;
+    activateTab(TAB_NAMES[next]);
+    $("tab-" + TAB_NAMES[next]).focus();
+  });
+  window.addEventListener("hashchange", () => activateTab(location.hash.slice(1)));
+}
+
+// ---------------------------------------------------------------------------
 // Wiring
 // ---------------------------------------------------------------------------
 function bindEvents() {
@@ -489,6 +541,8 @@ function tickClock() {
 function init() {
   initChart();
   bindEvents();
+  bindTabs();
+  activateTab(location.hash.slice(1) || "services");
   loadHost();
   loadServices();
   loadPorts();

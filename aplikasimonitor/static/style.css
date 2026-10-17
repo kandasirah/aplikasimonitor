@@ -74,9 +74,10 @@ main { padding: 20px 22px 60px; display: flex; flex-direction: column; gap: 18px
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px 18px;
+  min-width: 0;            /* cegah card melebar mengikuti konten tabel */
 }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.head-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.head-tools, .panel-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* ---------- Stat cards ---------- */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
@@ -93,14 +94,53 @@ main { padding: 20px 22px 60px; display: flex; flex-direction: column; gap: 18px
 /* ---------- Chart ---------- */
 .chart-card .chart-wrap { height: 220px; position: relative; }
 
-/* ---------- Grid 2 kolom ---------- */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-@media (max-width: 1050px) { .grid-2 { grid-template-columns: 1fr; } }
+/* ---------- Tab panel ---------- */
+.tabs-card { padding: 0; overflow: hidden; }
+.tabbar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #1a2130, #171d27);
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  appearance: none; font: inherit; font-size: .82rem; font-weight: 600;
+  color: var(--muted); background: transparent;
+  border: 1px solid transparent; border-radius: 999px;
+  padding: 7px 14px; cursor: pointer;
+  transition: color .15s ease, background .15s ease, border-color .15s ease;
+}
+.tab-ico {
+  width: 15px; height: 15px; flex: 0 0 auto; opacity: .9;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.tab:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tab[aria-selected="true"] {
+  color: #d3e6ff;
+  background: rgba(76,154,255,.16);
+  border-color: rgba(76,154,255,.45);
+}
+.tab[aria-selected="true"] .tab-ico { opacity: 1; }
+.tab .pill { padding: 1px 8px; font-size: .68rem; }
+.tab[aria-selected="true"] .pill {
+  color: var(--accent); background: rgba(76,154,255,.14);
+  border-color: rgba(76,154,255,.4);
+}
+.tab .pill.bad {
+  color: var(--red); background: rgba(248,81,73,.14);
+  border-color: rgba(248,81,73,.4);
+}
+.tabpanel { padding: 18px; }
+.tabpanel[hidden] { display: none; }
+.panel-tools { margin-bottom: 14px; }
 
 /* ---------- Tabel ---------- */
-.table-scroll { max-height: 340px; overflow: auto; border-radius: 8px; }
-.table-scroll.tall { max-height: 420px; }
-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.table-scroll { max-height: 420px; overflow: auto; border-radius: 8px; }
+.table-scroll.tall { max-height: 520px; }
+table { width: 100%; border-collapse: collapse; font-size: .82rem; table-layout: fixed; }
 th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 th {
   position: sticky; top: 0; background: var(--bg-soft); z-index: 2;
@@ -109,8 +149,37 @@ th {
 tbody tr:hover { background: rgba(76,154,255,.06); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; font-size: .76rem; }
-.truncate { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .empty { padding: 22px; text-align: center; color: var(--muted); font-size: .85rem; }
+
+/* Lebar kolom tetap (fixed) supaya tabel tidak bergeser saat data refresh.
+   Kolom tanpa lebar eksplisit mengisi sisa ruang secara merata. */
+.tbl { min-width: 480px; }
+
+/* Service: Status | Unit | Deskripsi | Aksi */
+.tbl-services th:nth-child(1), .tbl-services td:nth-child(1) { width: 92px; }
+.tbl-services th:nth-child(2), .tbl-services td:nth-child(2) { width: 34%; }
+.tbl-services th:nth-child(4), .tbl-services td:nth-child(4) { width: 96px; }
+
+/* Port: Port | Proto | Alamat | Proses */
+.tbl-ports th:nth-child(1), .tbl-ports td:nth-child(1) { width: 116px; }
+.tbl-ports th:nth-child(2), .tbl-ports td:nth-child(2) { width: 78px; }
+.tbl-ports th:nth-child(3), .tbl-ports td:nth-child(3) { width: 34%; }
+
+/* Proses: PID | Nama | User | CPU% | RAM% | RSS | Perintah */
+.tbl-processes { min-width: 640px; }
+.tbl-processes th:nth-child(1), .tbl-processes td:nth-child(1) { width: 68px; }
+.tbl-processes th:nth-child(2), .tbl-processes td:nth-child(2) { width: 16%; }
+.tbl-processes th:nth-child(3), .tbl-processes td:nth-child(3) { width: 12%; }
+.tbl-processes th:nth-child(4), .tbl-processes td:nth-child(4) { width: 62px; }
+.tbl-processes th:nth-child(5), .tbl-processes td:nth-child(5) { width: 62px; }
+.tbl-processes th:nth-child(6), .tbl-processes td:nth-child(6) { width: 80px; }
+
+/* Sensor: Sensor | Label | Nilai | Maks | Kritis */
+.tbl-sensors th:nth-child(1), .tbl-sensors td:nth-child(1) { width: 26%; }
+.tbl-sensors th:nth-child(3), .tbl-sensors td:nth-child(3) { width: 90px; }
+.tbl-sensors th:nth-child(4), .tbl-sensors td:nth-child(4) { width: 80px; }
+.tbl-sensors th:nth-child(5), .tbl-sensors td:nth-child(5) { width: 80px; }
 
 /* ---------- Badges & chip ---------- */
 .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .68rem; font-weight: 600; letter-spacing: .02em; }
@@ -145,7 +214,7 @@ input[type="search"] { width: 150px; }
 /* ---------- Log ---------- */
 .live-badge { font-size: .6rem; color: var(--red); border: 1px solid rgba(248,81,73,.4); border-radius: 5px; padding: 1px 6px; vertical-align: middle; margin-left: 6px; }
 .logs {
-  height: 320px; overflow: auto; background: #0a0d12; border: 1px solid var(--border);
+  height: 420px; overflow: auto; background: #0a0d12; border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 10px; font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
   font-size: .74rem; line-height: 1.5;
 }
